@@ -36,15 +36,17 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install OS deps required for common Python wheels (kept minimal)
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc libffi-dev build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Install OS deps required for common Python wheels (kept minimal).
+# Some slim images include apt hooks that fail during 'apt-get update' on
+# a few platforms; disable APT::Update::Post-Invoke to avoid the error.
+RUN apt-get -o APT::Update::Post-Invoke::=/bin/true update \
+  && apt-get install -y --no-install-recommends ca-certificates gcc libffi-dev build-essential \
+  && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install
 COPY requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip \
-    && pip install --no-cache-dir -r /app/requirements.txt
+  && pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy application
 COPY . /app
